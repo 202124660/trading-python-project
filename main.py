@@ -5,30 +5,26 @@ class Instrument:
         self.keys = ('TimeStamp', 'Quantity', 'Price')
         self.cost_of_all_trades = 0  # counts current total cost of all trades (price * quantity) for weighted avg calc
         self.old_time_stamp = 0
-        self.num_trades = 0
 
-    def add_trade(self, trade):
-        trade.pop('Symbol')  # removes symbol from trade, as all trades in this instrument have the same symbol
-        self.num_trades += 1
-        if self.num_trades > 1:  # checks whether this is the first trade added for this instrument
-            self.update_max_time_gap(trade['TimeStamp'])  # these methods update the running totals
-            self.update_total_volume(trade['Quantity'])
-            self.update_weighted_avg_price(trade['Quantity'], trade['Price'])
-            self.update_max_price(trade['Price'])
+    def add_trade(self, timestamp, quantity, price):
+        if self.instrument_dict != {}:  # checks whether this is the first trade added for this instrument
+            self.update_max_time_gap(timestamp)  # these methods update the running totals
+            self.update_total_volume(quantity)
+            self.update_weighted_avg_price(quantity, price)
+            self.update_max_price(price)
         else:
             self.instrument_dict['MaxTimeGap'] = 0  # these methods set initial running total values after the 1st trade
-            self.old_time_stamp = trade['TimeStamp']
-            self.instrument_dict['Volume'] = trade['Quantity']
-            self.instrument_dict['WeightedAveragePrice'] = trade['Price']
-            self.cost_of_all_trades += trade['Quantity'] * trade['Price']
-            self.instrument_dict['MaxPrice'] = trade['Price']
+            self.old_time_stamp = timestamp
+            self.instrument_dict['Volume'] = quantity
+            self.instrument_dict['WeightedAveragePrice'] = price
+            self.cost_of_all_trades += quantity * price
+            self.instrument_dict['MaxPrice'] = price
 
     def update_max_time_gap(self, new_time_stamp):
         new_time_gap = new_time_stamp - self.old_time_stamp  # calculates latest time gap
         if new_time_gap > self.instrument_dict['MaxTimeGap']:
             self.instrument_dict['MaxTimeGap'] = new_time_gap  # updates time gap if this is the largest so far
         self.old_time_stamp = new_time_stamp  # updates self.old_time_stamp for next method instance
-
 
     def update_total_volume(self, new_quantity):
         self.instrument_dict['Volume'] += new_quantity  # updates total volume by adding latest quantity traded
@@ -46,22 +42,14 @@ if __name__ == '__main__':
     input_filename = 'input.csv'
     output_filename = 'output.csv'
     keys = ('TimeStamp', 'Symbol', 'Quantity', 'Price')
-    symbols = []
     instruments = {}
 
     with open(input_filename) as input_file:
-        all_trades = []  # creates empty list to store every trade in order
         for line in input_file:
-            split_line = line.split(',')  # converts this line (currently a single string) to a list
-            trade = [int(split_line[0]), split_line[1], int(split_line[2]), int(split_line[3])]  # create list of integer data & symbol name for trade
-            trade_dict = dict(zip(keys, trade))  # convert integer data & symbol name to dict
-            all_trades.append(trade_dict)  # store in list of dicts and convert to appropriate datatypes
-
-    for trade in all_trades:
-        if trade['Symbol'] not in symbols:
-            symbols.append(trade['Symbol'])  # store symbol name in list of symbol names, if this is the first instance
-            instruments[trade['Symbol']] = Instrument(trade['Symbol'])  # stores new class instance in dictionary with its symbol as they key, if this is the first instance
-        instruments[trade['Symbol']].add_trade(trade)  # updates class instance with latest trade
+            trade = line.split(',')  # converts this line (currently a single string) to a list
+            if trade[1] not in instruments.keys():
+                instruments[trade[1]] = Instrument(trade[1])  # stores new class instance in dictionary with its symbol as they key, if this is the first instance
+            instruments[trade[1]].add_trade(int(trade[0]), int(trade[2]), int(trade[3]))  # updates class instance with latest trade
 
     output_dict = {}  # empty dict to store data for outputting
     for symb, instr in instruments.items():
