@@ -1,4 +1,4 @@
-# Mako Python Project
+# Trading Python Project
 
 This python project aims to parse & summarise trading data.
 
