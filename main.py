@@ -1,30 +1,34 @@
 class Instrument:
     def __init__(self, symbol):
         self.symbol = symbol
-        self.all_trades = []  # stores every trade for this instrument that comes in, in order
         self.instrument_dict = {}  # stores running totals of output values
         self.keys = ('TimeStamp', 'Quantity', 'Price')
         self.cost_of_all_trades = 0  # counts current total cost of all trades (price * quantity) for weighted avg calc
+        self.old_time_stamp = 0
+        self.num_trades = 0
 
     def add_trade(self, trade):
         trade.pop('Symbol')  # removes symbol from trade, as all trades in this instrument have the same symbol
-        self.all_trades.append(trade)  # adds trade to list of all trades
-        if len(self.all_trades) > 1:  # checks whether this is the first trade added for this instrument
+        self.num_trades += 1
+        if self.num_trades > 1:  # checks whether this is the first trade added for this instrument
             self.update_max_time_gap(trade['TimeStamp'])  # these methods update the running totals
             self.update_total_volume(trade['Quantity'])
             self.update_weighted_avg_price(trade['Quantity'], trade['Price'])
             self.update_max_price(trade['Price'])
         else:
             self.instrument_dict['MaxTimeGap'] = 0  # these methods set initial running total values after the 1st trade
+            self.old_time_stamp = trade['TimeStamp']
             self.instrument_dict['Volume'] = trade['Quantity']
             self.instrument_dict['WeightedAveragePrice'] = trade['Price']
             self.cost_of_all_trades += trade['Quantity'] * trade['Price']
             self.instrument_dict['MaxPrice'] = trade['Price']
 
     def update_max_time_gap(self, new_time_stamp):
-        new_time_gap = new_time_stamp - self.all_trades[-2]['TimeStamp']  # calculates latest time gap
+        new_time_gap = new_time_stamp - self.old_time_stamp  # calculates latest time gap
         if new_time_gap > self.instrument_dict['MaxTimeGap']:
             self.instrument_dict['MaxTimeGap'] = new_time_gap  # updates time gap if this is the largest so far
+        self.old_time_stamp = new_time_stamp  # updates self.old_time_stamp for next method instance
+
 
     def update_total_volume(self, new_quantity):
         self.instrument_dict['Volume'] += new_quantity  # updates total volume by adding latest quantity traded
