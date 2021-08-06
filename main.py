@@ -1,3 +1,6 @@
+import time
+
+
 class Instrument:
     def __init__(self, symbol):
         self.symbol = symbol
@@ -39,6 +42,7 @@ class Instrument:
 
 
 if __name__ == '__main__':
+    starttime = time.time()
     input_filename = 'input.csv'
     output_filename = 'output.csv'
     keys = ('TimeStamp', 'Symbol', 'Quantity', 'Price')
@@ -58,3 +62,4 @@ if __name__ == '__main__':
     with open(output_filename, "w") as output_file:
         for symb in sorted_dict.keys():  # loop over each symbol
             output_file.write(f'{symb},{",".join(str(val) for val in sorted_dict[symb])}\n')  # converts vals to strings, then adds commas between vals and adds the symbol to the front
+    print(time.time() - starttime)
